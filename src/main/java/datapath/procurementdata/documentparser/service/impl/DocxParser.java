@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
+import static datapath.procurementdata.documentparser.service.DocumentParsingUtils.toZonedDateTimeString;
+
 @Service
 public class DocxParser implements DocumentParseable {
 
@@ -29,9 +31,9 @@ public class DocxParser implements DocumentParseable {
         try {
             PackageProperties props = xdoc.getPackage().getPackageProperties();
             documentContent.getAttributes().put("author", get(props.getCreatorProperty()));
-            documentContent.getAttributes().put("created", get(props.getCreatedProperty()));
+            documentContent.getAttributes().put("created", toZonedDateTimeString(get(props.getCreatedProperty())));
             documentContent.getAttributes().put("lastModifiedBy", get(props.getLastModifiedByProperty()));
-            documentContent.getAttributes().put("modified", get(props.getModifiedProperty()));
+            documentContent.getAttributes().put("modified", toZonedDateTimeString(get(props.getModifiedProperty())));
             documentContent.getAttributes().put("title", get(props.getTitleProperty()));
             documentContent.getAttributes().put("pageCount", xdoc.getProperties().getExtendedProperties().getPages());
             documentContent.getAttributes().put("subject", get(props.getSubjectProperty()));

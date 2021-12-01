@@ -26,12 +26,15 @@ public class DocumentParser {
     public DocumentContent parse(FileContent fileContent) {
         try {
             DocumentParseable parser = parsers.getOrDefault(fileContent.getFormat().toUpperCase(), parsers.get("DEFAULT"));
-            return parser.parse(fileContent.getContent());
+            DocumentContent documentContent = parser.parse(fileContent.getContent());
+            fileContent.getContent().close();
+            return documentContent;
         } catch (NotFoundParserException e) {
             log.warn("Unknown format {}", fileContent.getFormat());
             return null;
         } catch (Exception e) {
-            throw new RuntimeException("Input format " + fileContent.getFormat(), e);
+            log.error(e.getMessage(), e);
+            return null;
         }
     }
 }

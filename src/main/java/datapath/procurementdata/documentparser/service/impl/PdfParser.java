@@ -8,13 +8,22 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 
 import static com.itextpdf.text.pdf.parser.PdfTextExtractor.getTextFromPage;
+import static java.time.ZoneOffset.ofHours;
+import static java.time.ZonedDateTime.of;
+import static java.time.format.DateTimeFormatter.ofPattern;
+import static org.apache.commons.lang3.StringUtils.*;
 
 @Service
 public class PdfParser implements DocumentParseable {
 
-    private final static SimpleTextExtractionStrategy strategy = new SimpleTextExtractionStrategy();
+    private final static SimpleTextExtractionStrategy STRATEGY = new SimpleTextExtractionStrategy();
+    private final static DateTimeFormatter FORMATTER = ofPattern("'D:'yyyyMMddHHmmss");
 
     @Override
     public DocumentContent parse(InputStream inputStream) throws IOException {
@@ -28,13 +37,44 @@ public class PdfParser implements DocumentParseable {
     private String extractText(PdfReader reader) throws IOException {
         StringBuilder builder = new StringBuilder();
         for (int i = 1; i <= reader.getNumberOfPages(); i++) {
-            builder.append(getTextFromPage(reader, i, strategy));
+            builder.append(getTextFromPage(reader, i, STRATEGY));
         }
         return builder.toString();
     }
 
     private void putAttributes(DocumentContent documentContent, PdfReader reader) {
-        documentContent.getAttributes().putAll(reader.getInfo());
+        HashMap<String, String> info = reader.getInfo();
+        documentContent.getAttributes().put("author", info.get("Author"));
+        documentContent.getAttributes().put("created", convertDate(info.get("CreationDate")));
+        documentContent.getAttributes().put("modified", convertDate(info.get("ModDate")));
+        documentContent.getAttributes().put("title", info.get("Title"));
+        documentContent.getAttributes().put("pageCount", reader.getNumberOfPages());
+        documentContent.getAttributes().put("subject", info.get("Subject"));
+        documentContent.getAttributes().put("application", info.get("Creator"));
+        documentContent.getAttributes().put("version", reader.getPdfVersion());
+        documentContent.getAttributes().put("extension", extension());
+    }
+
+    private String convertDate(String date) {
+        if (isBlank(date)) return null;
+
+        String dateTime = substringBefore(date, "+");
+        dateTime = substringBefore(dateTime, "-");
+        dateTime = substringBefore(dateTime, "Z");
+        LocalDateTime parsedLocalDateTime = LocalDateTime.parse(dateTime, FORMATTER);
+
+        int zoneHours;
+        if (date.contains("+")) {
+            String zone = substringBetween(date, "+", "'");
+            zoneHours = Integer.parseInt(zone);
+        } else if (date.contains("-")) {
+            String zone = substringBetween(date, "-", "'");
+            zoneHours = Integer.parseInt(zone) * -1;
+        } else
+            zoneHours = 0;
+
+        ZonedDateTime zonedDateTime = of(parsedLocalDateTime, ofHours(zoneHours));
+        return zonedDateTime.toString();
     }
 
     @Override

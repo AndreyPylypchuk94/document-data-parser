@@ -17,11 +17,18 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Objects.isNull;
+import static org.springframework.data.domain.PageRequest.of;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.util.CollectionUtils.isEmpty;
 
 @Slf4j
 @AllArgsConstructor
@@ -39,42 +46,62 @@ public class DocumentParserApplication implements CommandLineRunner {
     private final ObjectMapper mapper;
 
     @Override
-    public void run(String... args) {
+    public void run(String... args) throws IOException {
+        log.info("Started");
 
+        Map<String, String> unknownExtensions = new HashMap<>();
 
-        Query query = new Query(where("procurementMethod").is("open"))
-//                .with(Sort.by(DESC, "dateModified"))
-                .limit(100);
-
-        List<Tender> tenders = mongoTemplate.find(query, Tender.class, "rawProzorro");
-
-        tenders.forEach(t -> t.getDocuments()
-                .stream()
-                .filter(d -> "text/plain".equals(d.getFormat()))
-                .map(d -> {
-                    Response response = loadService.load(d);
-                    FileContent fileContent = formatProvider.provide(response);
-                    DocumentContent documentContent = documentParser.parse(fileContent);
-
-                    if (isNull(documentContent)) return null;
-
-                    documentContent.setTenderId(t.getTenderID());
-                    documentContent.setProcuringEntityIdentifier(t.getProcuringEntity().getIdentifier().getId());
-                    documentContent.setId(d.getId());
-                    documentContent.setTitle(d.getTitle());
-                    documentContent.setType(d.getDocumentType());
-                    documentContent.setUrl(d.getUrl());
-
-                    return documentContent;
-                })
-                .filter(Objects::nonNull)
-                .forEach(d -> {
-                    try {
-                        mongoTemplate.save(mapper.writeValueAsString(d), "documentContent");
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
+        Query query = new Query(where("procurementMethod").is("open")
+                .andOperator(where("status").is("complete"))
         );
+
+        int size = 1000;
+        int page = 0;
+        List<Tender> tenders;
+        do {
+            log.info("Processing {} page {}-{} documents", page, page * size, page * size + size);
+
+            tenders = mongoTemplate.find(query.with(of(page, size)), Tender.class, "rawProzorro");
+
+            if (isEmpty(tenders)) break;
+
+            tenders.forEach(t -> t.getDocuments()
+                    .stream()
+                    .filter(d -> "text/plain".equals(d.getFormat()))
+                    .map(d -> {
+                        Response response = loadService.load(d);
+                        FileContent fileContent = formatProvider.provide(response);
+                        DocumentContent documentContent = documentParser.parse(fileContent);
+
+                        if (isNull(documentContent)) {
+                            unknownExtensions.putIfAbsent(fileContent.getFormat(), d.getUrl());
+                            return null;
+                        }
+
+                        documentContent.setTenderId(t.getTenderID());
+                        documentContent.setProcuringEntityIdentifier(t.getProcuringEntity().getIdentifier().getId());
+                        documentContent.setId(d.getId());
+                        documentContent.setTitle(d.getTitle());
+                        documentContent.setType(d.getDocumentType());
+                        documentContent.setUrl(d.getUrl());
+
+                        return documentContent;
+                    })
+                    .filter(Objects::nonNull)
+                    .forEach(d -> {
+                        try {
+                            mongoTemplate.save(mapper.writeValueAsString(d), "documents");
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+            );
+
+            page++;
+        } while (!isEmpty(tenders));
+
+        mapper.writeValue(new File(LocalDateTime.now() + ".json"), unknownExtensions);
+
+        log.info("Finished");
     }
 }

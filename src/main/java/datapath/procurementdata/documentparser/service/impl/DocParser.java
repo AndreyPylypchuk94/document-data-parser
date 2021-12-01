@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static datapath.procurementdata.documentparser.service.DocumentParsingUtils.toZonedDateTimeString;
+
 @Service
 public class DocParser implements DocumentParseable {
 
@@ -26,9 +28,9 @@ public class DocParser implements DocumentParseable {
         SummaryInformation summaryInformation = doc.getSummaryInformation();
         DocumentSummaryInformation documentSummaryInformation = doc.getDocumentSummaryInformation();
         documentContent.getAttributes().put("author", summaryInformation.getAuthor());
-        documentContent.getAttributes().put("created", summaryInformation.getCreateDateTime());
+        documentContent.getAttributes().put("created", toZonedDateTimeString(summaryInformation.getCreateDateTime()));
         documentContent.getAttributes().put("lastModifiedBy", summaryInformation.getLastAuthor());
-        documentContent.getAttributes().put("modified", summaryInformation.getLastSaveDateTime());
+        documentContent.getAttributes().put("modified", toZonedDateTimeString(summaryInformation.getLastSaveDateTime()));
         documentContent.getAttributes().put("title", summaryInformation.getTitle());
         documentContent.getAttributes().put("pageCount", summaryInformation.getPageCount());
         documentContent.getAttributes().put("subject", summaryInformation.getSubject());
