@@ -55,50 +55,54 @@ public class DocumentParserApplication implements CommandLineRunner {
                 .andOperator(where("status").is("complete"))
         );
 
-        int size = 1000;
-        int page = 0;
-        List<Tender> tenders;
-        do {
-            log.info("Processing {} page {}-{} documents", page, page * size, page * size + size);
+        try {
+            int size = 1000;
+            int page = 0;
+            List<Tender> tenders;
+            do {
+                log.info("Processing {} page {}-{} documents", page, page * size, page * size + size);
 
-            tenders = mongoTemplate.find(query.with(of(page, size)), Tender.class, "rawProzorro");
+                tenders = mongoTemplate.find(query.with(of(page, size)), Tender.class, "rawProzorro");
 
-            if (isEmpty(tenders)) break;
+                if (isEmpty(tenders)) break;
 
-            tenders.forEach(t -> t.getDocuments()
-                    .stream()
-                    .filter(d -> "text/plain".equals(d.getFormat()))
-                    .map(d -> {
-                        Response response = loadService.load(d);
-                        FileContent fileContent = formatProvider.provide(response);
-                        DocumentContent documentContent = documentParser.parse(fileContent);
+                tenders.forEach(t -> t.getDocuments()
+                        .stream()
+                        .filter(d -> "text/plain".equals(d.getFormat()))
+                        .map(d -> {
+                            Response response = loadService.load(d);
+                            FileContent fileContent = formatProvider.provide(response);
+                            DocumentContent documentContent = documentParser.parse(fileContent);
 
-                        if (isNull(documentContent)) {
-                            unknownExtensions.putIfAbsent(fileContent.getFormat(), d.getUrl());
-                            return null;
-                        }
+                            if (isNull(documentContent)) {
+                                unknownExtensions.putIfAbsent(fileContent.getFormat(), d.getUrl());
+                                return null;
+                            }
 
-                        documentContent.setTenderId(t.getTenderID());
-                        documentContent.setProcuringEntityIdentifier(t.getProcuringEntity().getIdentifier().getId());
-                        documentContent.setId(d.getId());
-                        documentContent.setTitle(d.getTitle());
-                        documentContent.setType(d.getDocumentType());
-                        documentContent.setUrl(d.getUrl());
+                            documentContent.setTenderId(t.getTenderID());
+                            documentContent.setProcuringEntityIdentifier(t.getProcuringEntity().getIdentifier().getId());
+                            documentContent.setId(d.getId());
+                            documentContent.setTitle(d.getTitle());
+                            documentContent.setType(d.getDocumentType());
+                            documentContent.setUrl(d.getUrl());
 
-                        return documentContent;
-                    })
-                    .filter(Objects::nonNull)
-                    .forEach(d -> {
-                        try {
-                            mongoTemplate.save(mapper.writeValueAsString(d), "documents");
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-            );
+                            return documentContent;
+                        })
+                        .filter(Objects::nonNull)
+                        .forEach(d -> {
+                            try {
+                                mongoTemplate.save(mapper.writeValueAsString(d), "documents");
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                );
 
-            page++;
-        } while (!isEmpty(tenders));
+                page++;
+            } while (!isEmpty(tenders));
+        } catch (Exception e) {
+            log.error("error", e);
+        }
 
         mapper.writeValue(new File(LocalDateTime.now() + ".json"), unknownExtensions);
 
