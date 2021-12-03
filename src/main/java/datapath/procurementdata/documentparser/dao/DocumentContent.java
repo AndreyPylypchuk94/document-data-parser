@@ -17,4 +17,6 @@ public class DocumentContent {
     private String title;
     private Map<String, Object> attributes = new HashMap<>();
     private String text;
+    private boolean contentInFile;
+    private boolean unprocessedFile;
 }

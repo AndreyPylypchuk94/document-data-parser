@@ -10,7 +10,8 @@ import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 public class DocumentFormatProvider {
 
     public FileContent provide(Response response) {
-        return new FileContent(extractFormat(response), response.bodyStream());
+        byte[] content = response.bodyAsBytes();
+        return new FileContent(extractFormat(response), content);
     }
 
     private String extractFormat(Response response) {

@@ -6,6 +6,8 @@ import datapath.procurementdata.documentparser.exception.NotFoundParserException
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -24,17 +26,22 @@ public class DocumentParser {
     }
 
     public DocumentContent parse(FileContent fileContent) {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent.getContent());
         try {
             DocumentParseable parser = parsers.getOrDefault(fileContent.getFormat().toUpperCase(), parsers.get("DEFAULT"));
-            DocumentContent documentContent = parser.parse(fileContent.getContent());
-            fileContent.getContent().close();
-            return documentContent;
+            return parser.parse(inputStream);
         } catch (NotFoundParserException e) {
             log.warn("Unknown format {}", fileContent.getFormat());
             return null;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return null;
+        } finally {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
