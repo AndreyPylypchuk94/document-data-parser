@@ -12,6 +12,7 @@ public class DocumentContent {
     private String id;
     private String tenderId;
     private String procuringEntityIdentifier;
+    private String tenderDateModified;
     private String url;
     private String type;
     private String title;
