@@ -1,4 +1,4 @@
-package datapath.procurementdata.documentparser.dao;
+package datapath.procurementdata.documentparser.dao.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Data
-public class DocumentContent {
+public class Document {
     @JsonProperty("_id")
     private String id;
     private String tenderId;
@@ -19,5 +19,5 @@ public class DocumentContent {
     private Map<String, Object> attributes = new HashMap<>();
     private String text;
     private boolean contentInFile;
-    private boolean unprocessedFile;
+    private boolean hasTable;
 }

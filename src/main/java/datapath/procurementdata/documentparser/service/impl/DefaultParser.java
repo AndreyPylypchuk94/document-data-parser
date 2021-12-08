@@ -1,6 +1,6 @@
 package datapath.procurementdata.documentparser.service.impl;
 
-import datapath.procurementdata.documentparser.dao.DocumentContent;
+import datapath.procurementdata.documentparser.domain.DocumentContent;
 import datapath.procurementdata.documentparser.exception.NotFoundParserException;
 import datapath.procurementdata.documentparser.service.DocumentParseable;
 import lombok.extern.slf4j.Slf4j;

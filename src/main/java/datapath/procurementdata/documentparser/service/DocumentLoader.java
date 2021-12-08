@@ -1,30 +1,19 @@
 package datapath.procurementdata.documentparser.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import datapath.procurementdata.documentparser.dao.DocumentContent;
-import datapath.procurementdata.documentparser.dao.Tender;
-import datapath.procurementdata.documentparser.domain.FileContent;
+import datapath.procurementdata.documentparser.dao.entity.Tender;
+import datapath.procurementdata.documentparser.dao.service.DocumentDaoService;
+import datapath.procurementdata.documentparser.dao.service.TenderDaoService;
+import datapath.procurementdata.documentparser.domain.DocumentContent;
+import datapath.procurementdata.documentparser.domain.ResponseContent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.springframework.data.domain.PageRequest.of;
-import static org.springframework.data.domain.Sort.Direction.ASC;
-import static org.springframework.data.domain.Sort.Direction.DESC;
-import static org.springframework.data.domain.Sort.by;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.util.CollectionUtils.isEmpty;
 
 @Slf4j
@@ -32,35 +21,24 @@ import static org.springframework.util.CollectionUtils.isEmpty;
 @RequiredArgsConstructor
 public class DocumentLoader {
 
-    private static final String FINAL_COLLECTION_NAME = "documents";
-    private static final String RAW_DATE_COLLECTION_NAME = "rawProzorro";
     @Value("${document.loading.enable}")
     private boolean enable;
 
-    private final ConnectionService connectionService;
-    private final DocumentFormatProvider formatProvider;
+    private final ProzorroApiService prozorroApiService;
+    private final ResponseParser responseParser;
     private final DocumentParser documentParser;
-    private final MongoTemplate mongoTemplate;
-    private final ObjectMapper mapper;
-    private final FileStorageService fileStorageService;
     private final DocumentFilterService filterService;
+    private final DocumentHandler handler;
+    private final DocumentDaoService documentDaoService;
+    private final TenderDaoService tenderDaoService;
 
     @Scheduled(fixedDelay = 1000 * 60)
     private void load() {
         if (!enable) return;
 
-        String lastTenderDocDate = getLast();
-
         log.info("Started");
 
-//        Map<String, String> unknownExtensions = new HashMap<>();
-
-        Query query = new Query(where("procurementMethod").is("open")
-                .andOperator(where("status").is("complete"))
-        );
-
-        if (nonNull(lastTenderDocDate))
-            query.addCriteria(where("dateModified").gt(lastTenderDocDate));
+        String lastTenderDocDate = documentDaoService.getLastTenderDateModified();
 
         int size = 10;
         int page = 0;
@@ -68,77 +46,31 @@ public class DocumentLoader {
         do {
             log.info("Processing {} page after {} date", page, lastTenderDocDate);
 
-            tenders = mongoTemplate.find(query.with(of(page, size, ASC, "dateModified")), Tender.class, RAW_DATE_COLLECTION_NAME);
+            tenders = tenderDaoService.getPageAfterDate(page, size, lastTenderDocDate);
 
             if (isEmpty(tenders)) break;
 
             tenders.forEach(t -> t.getDocuments()
-                            .stream()
-                            .filter(filterService::isValid)
-                            .map(d -> {
-                                try {
-                                    Connection.Response response = connectionService.load(d);
-                                    FileContent fileContent = formatProvider.provide(response);
-                                    DocumentContent documentContent = documentParser.parse(fileContent);
-
-                                    if (isNull(documentContent)) {
-//                                unknownExtensions.putIfAbsent(fileContent.getFormat(), d.getUrl());
-                                        return null;
-                                    }
-
-                                    documentContent.setTenderId(t.getTenderID());
-                                    documentContent.setProcuringEntityIdentifier(t.getProcuringEntity().getIdentifier().getId());
-                                    documentContent.setId(d.getId());
-                                    documentContent.setTitle(d.getTitle());
-                                    documentContent.setType(d.getDocumentType());
-                                    documentContent.setUrl(d.getUrl());
-                                    documentContent.setTenderDateModified(t.getDateModified());
-
-                                    if (documentContent.getText().getBytes().length > fileContent.getContent().length) {
-                                        documentContent.setUnprocessedFile(true);
-                                        documentContent.setText(null);
-                                    }
-
-                                    return documentContent;
-                                } catch (Exception e) {
-                                    log.error("error", e);
-                                    return null;
-                                }
-                            })
-                            .filter(Objects::nonNull)
-                            .forEach(document -> {
-                                try {
-                                    String doc = mapper.writeValueAsString(document);
-                                    mongoTemplate.save(doc, FINAL_COLLECTION_NAME);
-                                } catch (Exception e) {
-                                    if (isBlank(document.getText()))
-                                        throw new RuntimeException(e);
-
-                                    fileStorageService.write(document.getText(), document.getId());
-                                    document.setText(null);
-                                    document.setContentInFile(true);
-                                    try {
-                                        mongoTemplate.save(mapper.writeValueAsString(document), FINAL_COLLECTION_NAME);
-                                    } catch (JsonProcessingException ex) {
-                                        ex.printStackTrace();
-                                    }
-                                }
-                            })
+                    .stream()
+                    .filter(filterService::isValid)
+                    .forEach(d -> {
+                        try {
+                            Connection.Response response = prozorroApiService.load(d);
+                            ResponseContent responseContent = responseParser.parse(response);
+                            DocumentContent documentContent = documentParser.parse(responseContent);
+                            if (documentContent.getText().getBytes().length <= responseContent.getContent().length)
+                                handler.handle(t, d, documentContent);
+                            else
+                                throw new RuntimeException("Invalid parsed content length");
+                        } catch (Exception e) {
+                            log.error("error", e);
+                        }
+                    })
             );
 
             page++;
         } while (!isEmpty(tenders));
 
-//        mapper.writeValue(new File(LocalDateTime.now() + ".json"), unknownExtensions);
-
         log.info("Finished");
-    }
-
-    private String getLast() {
-        Query query = new Query().with(by(DESC, "tenderDateModified"));
-        DocumentContent document = mongoTemplate.findOne(query, DocumentContent.class, FINAL_COLLECTION_NAME);
-        return isNull(document) || isNull(document.getTenderDateModified()) ?
-                null :
-                document.getTenderDateModified();
     }
 }

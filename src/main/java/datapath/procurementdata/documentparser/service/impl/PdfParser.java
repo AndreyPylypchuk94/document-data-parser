@@ -2,7 +2,7 @@ package datapath.procurementdata.documentparser.service.impl;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.SimpleTextExtractionStrategy;
-import datapath.procurementdata.documentparser.dao.DocumentContent;
+import datapath.procurementdata.documentparser.domain.DocumentContent;
 import datapath.procurementdata.documentparser.service.DocumentParseable;
 import org.springframework.stereotype.Service;
 

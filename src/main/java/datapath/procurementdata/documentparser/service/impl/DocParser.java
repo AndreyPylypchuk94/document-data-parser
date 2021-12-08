@@ -1,6 +1,6 @@
 package datapath.procurementdata.documentparser.service.impl;
 
-import datapath.procurementdata.documentparser.dao.DocumentContent;
+import datapath.procurementdata.documentparser.domain.DocumentContent;
 import datapath.procurementdata.documentparser.service.DocumentParseable;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hpsf.SummaryInformation;

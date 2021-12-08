@@ -1,6 +1,6 @@
 package datapath.procurementdata.documentparser.service;
 
-import datapath.procurementdata.documentparser.dao.DocumentContent;
+import datapath.procurementdata.documentparser.domain.DocumentContent;
 
 import java.io.IOException;
 import java.io.InputStream;

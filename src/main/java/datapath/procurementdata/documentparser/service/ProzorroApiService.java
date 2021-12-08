@@ -1,6 +1,6 @@
 package datapath.procurementdata.documentparser.service;
 
-import datapath.procurementdata.documentparser.dao.TenderDocument;
+import datapath.procurementdata.documentparser.dao.entity.TenderDocument;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Connection.Response;
@@ -11,7 +11,7 @@ import java.io.IOException;
 
 @Slf4j
 @Service
-public class ConnectionService {
+public class ProzorroApiService {
 
     public Response load(TenderDocument tenderDocument) {
         Response response = get(tenderDocument.getUrl());

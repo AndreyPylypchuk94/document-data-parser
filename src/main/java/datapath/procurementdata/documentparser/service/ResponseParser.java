@@ -1,17 +1,17 @@
 package datapath.procurementdata.documentparser.service;
 
-import datapath.procurementdata.documentparser.domain.FileContent;
+import datapath.procurementdata.documentparser.domain.ResponseContent;
 import org.jsoup.Connection.Response;
 import org.springframework.stereotype.Service;
 
 import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 
 @Service
-public class DocumentFormatProvider {
+public class ResponseParser {
 
-    public FileContent provide(Response response) {
+    public ResponseContent parse(Response response) {
         byte[] content = response.bodyAsBytes();
-        return new FileContent(extractFormat(response), content);
+        return new ResponseContent(extractFormat(response), content);
     }
 
     private String extractFormat(Response response) {

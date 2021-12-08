@@ -1,6 +1,6 @@
 package datapath.procurementdata.documentparser.service;
 
-import datapath.procurementdata.documentparser.dao.TenderDocument;
+import datapath.procurementdata.documentparser.dao.entity.TenderDocument;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class FileContent {
+public class ResponseContent {
     private String format;
     private byte[] content;
 }

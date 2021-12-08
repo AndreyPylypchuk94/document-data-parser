@@ -1,8 +1,7 @@
 package datapath.procurementdata.documentparser.service;
 
-import datapath.procurementdata.documentparser.dao.DocumentContent;
-import datapath.procurementdata.documentparser.domain.FileContent;
-import datapath.procurementdata.documentparser.exception.NotFoundParserException;
+import datapath.procurementdata.documentparser.domain.DocumentContent;
+import datapath.procurementdata.documentparser.domain.ResponseContent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -25,23 +24,15 @@ public class DocumentParser {
                 .collect(toMap(DocumentParseable::extension, identity()));
     }
 
-    public DocumentContent parse(FileContent fileContent) {
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent.getContent());
+    public DocumentContent parse(ResponseContent responseContent) throws IOException {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(responseContent.getContent());
+        DocumentParseable parser = parsers.getOrDefault(responseContent.getFormat().toUpperCase(), parsers.get("DEFAULT"));
+        DocumentContent content = parser.parse(inputStream);
         try {
-            DocumentParseable parser = parsers.getOrDefault(fileContent.getFormat().toUpperCase(), parsers.get("DEFAULT"));
-            return parser.parse(inputStream);
-        } catch (NotFoundParserException e) {
-            log.warn("Unknown format {}", fileContent.getFormat());
-            return null;
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return null;
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        return content;
     }
 }
