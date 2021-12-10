@@ -23,6 +23,8 @@ public class DocumentLoader {
 
     @Value("${document.loading.enable}")
     private boolean enable;
+    @Value("${tenders.processing.batch.size}")
+    private int size;
 
     private final ProzorroApiService prozorroApiService;
     private final ResponseParser responseParser;
@@ -40,7 +42,6 @@ public class DocumentLoader {
 
         String lastTenderDocDate = documentDaoService.getLastTenderDateModified();
 
-        int size = 10;
         int page = 0;
         List<Tender> tenders;
         do {
@@ -58,10 +59,7 @@ public class DocumentLoader {
                             Connection.Response response = prozorroApiService.load(d);
                             ResponseContent responseContent = responseParser.parse(response);
                             DocumentContent documentContent = documentParser.parse(responseContent);
-                            if (documentContent.getText().getBytes().length <= responseContent.getContent().length)
-                                handler.handle(t, d, documentContent);
-                            else
-                                throw new RuntimeException("Invalid parsed content length");
+                            handler.handle(t, d, documentContent);
                         } catch (Exception e) {
                             log.error("error", e);
                         }

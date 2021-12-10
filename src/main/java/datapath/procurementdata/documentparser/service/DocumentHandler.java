@@ -36,11 +36,13 @@ public class DocumentHandler {
             fileStorageService.write(documentContent.getWorkbook(), d.getId());
         }
 
-        if (documentContent.getText().getBytes().length < MAX_TEXT_LENGTH) {
-            document.setText(documentContent.getText());
-        } else {
-            document.setContentInFile(true);
-            fileStorageService.write(documentContent.getText(), d.getId());
+        if (nonNull(documentContent.getText())) {
+            if (documentContent.getText().getBytes().length < MAX_TEXT_LENGTH) {
+                document.setText(documentContent.getText());
+            } else {
+                document.setContentInFile(true);
+                fileStorageService.write(documentContent.getText(), d.getId());
+            }
         }
 
         documentDaoService.save(document);

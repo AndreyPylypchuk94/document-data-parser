@@ -22,8 +22,9 @@ import static org.apache.commons.lang3.StringUtils.*;
 @Service
 public class PdfParser implements DocumentParseable {
 
+    private final static int MAX_CONTENT_SIZE = 30_000_000;
     private final static SimpleTextExtractionStrategy STRATEGY = new SimpleTextExtractionStrategy();
-    private final static DateTimeFormatter FORMATTER = ofPattern("'D:'yyyyMMddHHmmss");
+    private final static DateTimeFormatter FORMATTER = ofPattern("yyyyMMddHHmmss");
 
     @Override
     public DocumentContent parse(InputStream inputStream) throws IOException {
@@ -31,12 +32,15 @@ public class PdfParser implements DocumentParseable {
         DocumentContent documentContent = new DocumentContent();
         documentContent.setText(extractText(reader));
         putAttributes(documentContent, reader);
+        reader.close();
         return documentContent;
     }
 
     private String extractText(PdfReader reader) throws IOException {
         StringBuilder builder = new StringBuilder();
         for (int i = 1; i <= reader.getNumberOfPages(); i++) {
+            if (builder.toString().getBytes().length > MAX_CONTENT_SIZE)
+                return null;
             builder.append(getTextFromPage(reader, i, STRATEGY));
         }
         return builder.toString();
@@ -61,6 +65,11 @@ public class PdfParser implements DocumentParseable {
         String dateTime = substringBefore(date, "+");
         dateTime = substringBefore(dateTime, "-");
         dateTime = substringBefore(dateTime, "Z");
+
+        if (dateTime.startsWith("D:")) {
+            dateTime = substringAfter(dateTime, ":");
+        }
+
         LocalDateTime parsedLocalDateTime = LocalDateTime.parse(dateTime, FORMATTER);
 
         int zoneHours;
