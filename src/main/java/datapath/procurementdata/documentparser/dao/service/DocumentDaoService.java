@@ -3,7 +3,8 @@ package datapath.procurementdata.documentparser.dao.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datapath.procurementdata.documentparser.dao.entity.Document;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
@@ -13,21 +14,22 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.data.domain.Sort.by;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class DocumentDaoService {
 
-    private static final String DOCUMENTS = "documents";
+    @Value("${result.collection.name}")
+    private String COLLECTION_NAME;
 
     private final MongoTemplate template;
     private final ObjectMapper mapper;
 
     public void save(Document document) throws JsonProcessingException {
-        template.save(mapper.writeValueAsString(document), DOCUMENTS);
+        template.save(mapper.writeValueAsString(document), COLLECTION_NAME);
     }
 
     public String getLastTenderDateModified() {
         Query query = new Query().with(by(DESC, "tenderDateModified"));
-        Document document = template.findOne(query, Document.class, DOCUMENTS);
+        Document document = template.findOne(query, Document.class, COLLECTION_NAME);
         return isNull(document) || isNull(document.getTenderDateModified()) ?
                 null :
                 document.getTenderDateModified();

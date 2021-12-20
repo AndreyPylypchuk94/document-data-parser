@@ -29,7 +29,7 @@ public class DocumentLoader {
     private final ProzorroApiService prozorroApiService;
     private final ResponseParser responseParser;
     private final DocumentParser documentParser;
-    private final DocumentFilterService filterService;
+    private final DataFilterService filterService;
     private final DocumentHandler handler;
     private final DocumentDaoService documentDaoService;
     private final TenderDaoService tenderDaoService;
@@ -51,20 +51,22 @@ public class DocumentLoader {
 
             if (isEmpty(tenders)) break;
 
-            tenders.forEach(t -> t.getDocuments()
-                    .stream()
-                    .filter(filterService::isValid)
-                    .forEach(d -> {
-                        try {
-                            Connection.Response response = prozorroApiService.load(d);
-                            ResponseContent responseContent = responseParser.parse(response);
-                            DocumentContent documentContent = documentParser.parse(responseContent);
-                            handler.handle(t, d, documentContent);
-                        } catch (Exception e) {
-                            log.error("error", e);
-                        }
-                    })
-            );
+            tenders.stream()
+                    .filter(filterService::isProcessed)
+                    .forEach(t -> t.getDocuments()
+                            .stream()
+                            .filter(filterService::isProcessed)
+                            .forEach(d -> {
+                                try {
+                                    Connection.Response response = prozorroApiService.load(d);
+                                    ResponseContent responseContent = responseParser.parse(response);
+                                    DocumentContent documentContent = documentParser.parse(responseContent);
+                                    handler.handle(t, d, documentContent);
+                                } catch (Exception e) {
+                                    log.error("error", e);
+                                }
+                            })
+                    );
 
             page++;
         } while (!isEmpty(tenders));

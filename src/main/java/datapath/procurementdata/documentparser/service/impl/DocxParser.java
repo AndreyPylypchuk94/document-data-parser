@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static datapath.procurementdata.documentparser.service.DocumentParsingUtils.toZonedDateTimeString;
@@ -39,20 +41,32 @@ public class DocxParser implements DocumentParseable {
 
         XSSFWorkbook workbook = new XSSFWorkbook();
         List<IBodyElement> elements = xdoc.getBodyElements();
+        Map<String, String> sheetTitles = new HashMap<>();
         for (int i = 0; i < elements.size(); i++) {
             IBodyElement element = elements.get(i);
             if (element instanceof XWPFTable table) {
                 if (table.getNumberOfRows() <= 1) continue;
                 String title = extractTableTitle(elements, i);
-                XSSFSheet sheet;
-                try {
-                    sheet = workbook.createSheet(isNotBlank(title) ? title : "Sheet " + i);
-                } catch (Exception e) {
-                    sheet = workbook.createSheet();
-                }
+
+                String sheetName = "Sheet " + i;
+
+                if (isNotBlank(title))
+                    sheetTitles.put(sheetName, title);
+
+                XSSFSheet sheet = workbook.createSheet(sheetName);
                 handleSheet(sheet, table);
             }
         }
+
+        XSSFSheet sheet = workbook.createSheet("SheetTitles");
+        int r = 0;
+        for (Map.Entry<String, String> e : sheetTitles.entrySet()) {
+            XSSFRow row = sheet.createRow(r);
+            row.createCell(0).setCellValue(e.getKey());
+            row.createCell(1).setCellValue(e.getValue());
+            r++;
+        }
+
         documentContent.setWorkbook(workbook);
     }
 
@@ -96,7 +110,7 @@ public class DocxParser implements DocumentParseable {
 
     private String clear(String title) {
         if (title == null) return null;
-        return title.replaceAll("[^0-9A-Za-zА-ЩЬЮЯҐЄІЇа-щьюяґєії .,]", "");
+        return title.trim();
     }
 
     private void putAttributes(DocumentContent documentContent, XWPFDocument xdoc) {

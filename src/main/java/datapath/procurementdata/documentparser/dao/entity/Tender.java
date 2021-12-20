@@ -14,4 +14,5 @@ public class Tender {
     private Party procuringEntity;
     private String dateModified;
     private List<TenderDocument> documents = new ArrayList<>();
+    private List<Item> items = new ArrayList<>();
 }
