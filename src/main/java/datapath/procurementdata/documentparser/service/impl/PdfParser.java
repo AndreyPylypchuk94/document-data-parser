@@ -1,7 +1,6 @@
 package datapath.procurementdata.documentparser.service.impl;
 
 import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.parser.SimpleTextExtractionStrategy;
 import datapath.procurementdata.documentparser.domain.DocumentContent;
 import datapath.procurementdata.documentparser.service.DocumentParseable;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,7 @@ import static org.apache.commons.lang3.StringUtils.*;
 public class PdfParser implements DocumentParseable {
 
     private final static int MAX_CONTENT_SIZE = 30_000_000;
-    private final static SimpleTextExtractionStrategy STRATEGY = new SimpleTextExtractionStrategy();
+//    private final static SimpleTextExtractionStrategy STRATEGY = new SimpleTextExtractionStrategy();
     private final static DateTimeFormatter FORMATTER = ofPattern("yyyyMMddHHmmss");
 
     @Override
@@ -41,7 +40,7 @@ public class PdfParser implements DocumentParseable {
         for (int i = 1; i <= reader.getNumberOfPages(); i++) {
             if (builder.toString().getBytes().length > MAX_CONTENT_SIZE)
                 return null;
-            builder.append(getTextFromPage(reader, i, STRATEGY));
+            builder.append(getTextFromPage(reader, i));
         }
         return builder.toString();
     }
