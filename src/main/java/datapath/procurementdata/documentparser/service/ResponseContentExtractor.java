@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 
 @Service
-public class ResponseParser {
+public class ResponseContentExtractor {
 
     public ResponseContent parse(Response response) {
         byte[] content = response.bodyAsBytes();

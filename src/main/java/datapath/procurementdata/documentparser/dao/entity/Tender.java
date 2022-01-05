@@ -15,4 +15,5 @@ public class Tender {
     private String dateModified;
     private List<TenderDocument> documents = new ArrayList<>();
     private List<Item> items = new ArrayList<>();
+//    private List<Bid> bids = new ArrayList<>();
 }

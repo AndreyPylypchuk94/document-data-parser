@@ -1,7 +1,7 @@
-package datapath.procurementdata.documentparser.service.impl;
+package datapath.procurementdata.documentparser.service.parser.impl;
 
 import datapath.procurementdata.documentparser.domain.DocumentContent;
-import datapath.procurementdata.documentparser.service.DocumentParseable;
+import datapath.procurementdata.documentparser.service.parser.DocumentParseable;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackageProperties;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static datapath.procurementdata.documentparser.service.DocumentParsingUtils.toZonedDateTimeString;
+import static datapath.procurementdata.documentparser.service.parser.DocumentParsingUtils.toZonedDateTimeString;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Service

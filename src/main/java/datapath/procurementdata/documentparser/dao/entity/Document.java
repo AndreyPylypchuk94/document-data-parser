@@ -20,4 +20,5 @@ public class Document {
     private String text;
     private boolean contentInFile;
     private boolean hasTable;
+    private boolean parsed;
 }

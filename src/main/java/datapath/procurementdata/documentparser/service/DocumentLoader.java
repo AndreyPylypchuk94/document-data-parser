@@ -5,6 +5,7 @@ import datapath.procurementdata.documentparser.dao.service.DocumentDaoService;
 import datapath.procurementdata.documentparser.dao.service.TenderDaoService;
 import datapath.procurementdata.documentparser.domain.DocumentContent;
 import datapath.procurementdata.documentparser.domain.ResponseContent;
+import datapath.procurementdata.documentparser.service.parser.DocumentParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -27,7 +28,7 @@ public class DocumentLoader {
     private int size;
 
     private final ProzorroApiService prozorroApiService;
-    private final ResponseParser responseParser;
+    private final ResponseContentExtractor responseContentExtractor;
     private final DocumentParser documentParser;
     private final DataFilterService filterService;
     private final DocumentHandler handler;
@@ -59,7 +60,7 @@ public class DocumentLoader {
                             .forEach(d -> {
                                 try {
                                     Connection.Response response = prozorroApiService.load(d);
-                                    ResponseContent responseContent = responseParser.parse(response);
+                                    ResponseContent responseContent = responseContentExtractor.parse(response);
                                     DocumentContent documentContent = documentParser.parse(responseContent);
                                     handler.handle(t, d, documentContent);
                                 } catch (Exception e) {

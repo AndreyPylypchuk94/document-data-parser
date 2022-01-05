@@ -1,7 +1,7 @@
-package datapath.procurementdata.documentparser.service.impl;
+package datapath.procurementdata.documentparser.service.parser.impl;
 
 import datapath.procurementdata.documentparser.domain.DocumentContent;
-import datapath.procurementdata.documentparser.service.DocumentParseable;
+import datapath.procurementdata.documentparser.service.parser.DocumentParseable;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.hwpf.HWPFDocument;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static datapath.procurementdata.documentparser.service.DocumentParsingUtils.toZonedDateTimeString;
+import static datapath.procurementdata.documentparser.service.parser.DocumentParsingUtils.toZonedDateTimeString;
 
 @Service
 public class DocParser implements DocumentParseable {

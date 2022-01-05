@@ -1,4 +1,4 @@
-package datapath.procurementdata.documentparser.service;
+package datapath.procurementdata.documentparser.service.parser;
 
 import datapath.procurementdata.documentparser.domain.DocumentContent;
 import datapath.procurementdata.documentparser.domain.ResponseContent;

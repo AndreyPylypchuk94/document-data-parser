@@ -1,4 +1,4 @@
-package datapath.procurementdata.documentparser.service;
+package datapath.procurementdata.documentparser.service.parser;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
