@@ -10,9 +10,14 @@ import java.util.List;
 public class ParsingResult {
     @JsonProperty("_id")
     private String id;
-    private Integer symbolCount;
-    private String selectedText;
-    private List<RegexResult> regexResult = new ArrayList<>();
+    private List<PartResult> partResults = new ArrayList<>();
+
+    @Data
+    public static class PartResult {
+        private Integer symbolCount;
+        private String selectedText;
+        private List<RegexResult> regexResult = new ArrayList<>();
+    }
 
     @Data
     public static class RegexResult {
