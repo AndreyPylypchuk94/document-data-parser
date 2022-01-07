@@ -23,6 +23,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.springframework.util.CollectionUtils.isEmpty;
 
 @Slf4j
@@ -148,9 +149,10 @@ public class ContentParser {
             if (min < 0) min = 0;
             if (max > cleanedPart.length()) max = cleanedPart.length();
 
-            String selectedText = StringUtils.substring(cleanedPart, min, max);
+            String selectedText = StringUtils.substring(cleanedPart, 0, max);
 
-            partResult.setSelectedText(substringByTriggers(selectedText, minPosition));
+//            partResult.setSelectedText(substringByTriggers(selectedText, minPosition));
+            partResult.setSelectedText(selectedText);
 
             result.add(partResult);
         }
@@ -162,7 +164,7 @@ public class ContentParser {
 
         Integer startIndex = null;
         for (String trigger : TRIGGERS) {
-            if (StringUtils.containsIgnoreCase(selectedText, trigger)) {
+            if (containsIgnoreCase(selectedText, trigger)) {
                 int i = StringUtils.indexOfIgnoreCase(selectedText, trigger);
                 if ((isNull(startIndex) || i < startIndex) && minPosition > i)
                     startIndex = i;
@@ -185,6 +187,11 @@ public class ContentParser {
     }
 
     private String[] toParts(String text) {
+        String start = StringUtils.substring(text, 0, 150);
+
+        if (containsIgnoreCase(start, "додаток"))
+            return new String[]{text};
+
         return text.split("Додаток|додаток|ДОДАТОК");
     }
 
